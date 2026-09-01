@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOTILITONE WORK · 일동제약</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700;900&family=Noto+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16241D;
+    --ink-soft:#4A5C51;
+    --bg:#F6F3EA;
+    --surface:#FFFFFF;
+    --primary:#1F4D3A;
+    --primary-dark:#123326;
+    --primary-light:#DCEEE3;
+    --primary-tint:#EFF6F1;
+    --accent:#C9A227;
+    --accent-soft:#F5E9C8;
+    --coral:#B94A3E;
+    --coral-soft:#F6E2DF;
+    --line:rgba(22,36,29,0.12);
+    --line-soft:rgba(22,36,29,0.07);
+    --shadow: 0 12px 30px -14px rgba(22,36,29,0.25);
+    --radius-lg:22px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --font-display:'Noto Serif KR', serif;
+    --font-body:'Noto Sans KR', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(31,77,58,0.06), transparent 40%),
+      radial-gradient(circle at 88% 92%, rgba(201,162,39,0.07), transparent 45%);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  #root{min-height:100vh; display:flex; flex-direction:column;}
+  button{font-family:inherit; cursor:pointer;}
+  input, select, textarea{font-family:inherit;}
+  a{color:inherit;}
+  .visually-hidden{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+  ::selection{background:var(--accent-soft);}
+
+  /* ---------- shared bits ---------- */
+  .wordmark{
+    display:flex; align-items:center; gap:10px;
+  }
+  .pill-mark{
+    width:34px; height:34px; border-radius:50%;
+    background:linear-gradient(155deg, var(--primary), var(--primary-dark));
+    display:flex; align-items:center; justify-content:center;
+    position:relative; flex-shrink:0;
+    box-shadow:0 4px 10px -4px rgba(18,51,38,0.6);
+  }
+  .pill-mark::after{
+    content:"";
+    width:14px; height:8px; border-radius:6px;
+    background:linear-gradient(120deg, var(--accent-soft), var(--accent));
+    transform:rotate(-38deg);
+  }
+  .wordmark-text{display:flex; flex-direction:column; line-height:1.05;}
+  .wordmark-text b{font-family:var(--font-display); font-weight:700; font-size:15px; letter-spacing:0.5px;}
+  .wordmark-text span{font-size:10px; color:var(--ink-soft); letter-spacing:0.5px;}
+
+  .btn{
+    border:none; border-radius:999px; padding:12px 20px; font-weight:600; font-size:14px;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--primary); color:#fff; box-shadow:0 10px 20px -10px rgba(18,51,38,0.7);}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-ghost{background:transparent; color:var(--primary); border:1.5px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--primary);}
+  .btn-accent{background:var(--accent); color:var(--primary-dark);}
+  .btn-danger{background:var(--coral-soft); color:var(--coral);}
+  .btn-sm{padding:8px 14px; font-size:12.5px;}
+  .btn-block{width:100%;}
+  .btn:disabled{opacity:0.45; cursor:not-allowed;}
+
+  .field{margin-bottom:14px; text-align:left;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  .field input, .field select, .field textarea{
+    width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--line);
+    background:var(--surface); font-size:14.5px; color:var(--ink); outline:none;
+    transition:border-color .15s ease;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--primary);}
+  .field textarea{resize:vertical; min-height:70px;}
+  .field-row{display:flex; gap:10px;}
+  .field-row .field{flex:1;}
+  .hint{font-size:12px; color:var(--ink-soft); background:var(--primary-tint); border-radius:10px; padding:10px 12px; margin:2px 0 18px; line-height:1.5;}
+  .hint b{color:var(--primary);}
+  .error-text{color:var(--coral); font-size:12.5px; margin:-6px 0 12px; font-weight:600;}
+
+  .badge{display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:0.2px;}
+
+  /* ---------- LOGIN ---------- */
+  .login-screen{
+    flex:1; display:flex; align-items:center; justify-content:center; padding:32px 18px;
+  }
+  .login-card{
+    width:100%; max-width:380px; background:var(--surface); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow); padding:36px 30px 30px; text-align:center; border:1px solid var(--line-soft);
+  }
+  .login-mark{
+    width:60px; height:60px; border-radius:50%; margin:0 auto 16px;
+    background:linear-gradient(155deg, var(--primary), var(--primary-dark));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 12px 24px -10px rgba(18,51,38,0.7);
+  }
+  .login-mark::after{
+    content:""; width:24px; height:13px; border-radius:10px;
+    background:linear-gradient(120deg, var(--accent-soft), var(--accent));
+    transform:rotate(-38deg);
+  }
+  .login-title{font-family:var(--font-display); font-size:22px; font-weight:700; margin:0 0 2px; letter-spacing:0.3px;}
+  .login-sub{font-size:12.5px; color:var(--ink-soft); margin:0 0 26px;}
+  .login-tab-toggle{
+    display:flex; justify-content:center; gap:6px; margin-bottom:20px;
+  }
+  .login-form-title{font-size:14px; font-weight:700; margin:0 0 16px; color:var(--primary); text-align:left;}
+  .login-switch{
+    margin-top:18px; font-size:12.5px; color:var(--ink-soft); background:none; border:none; text-decoration:underline;
+    text-underline-offset:3px; padding:4px;
+  }
+  .login-switch:hover{color:var(--primary);}
+
+  /* ---------- APP SHELL (rep) ---------- */
+  .app-shell{flex:1; display:flex; flex-direction:column; max-width:520px; margin:0 auto; width:100%; background:var(--bg); min-height:100vh; position:relative;}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; padding:16px 18px 14px;
+    position:sticky; top:0; z-index:20; background:rgba(246,243,234,0.92); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .topbar-right{display:flex; align-items:center; gap:10px;}
+  .icon-btn{
+    width:34px; height:34px; border-radius:50%; border:1.5px solid var(--line); background:var(--surface);
+    display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--ink-soft);
+  }
+  .points-chip{
+    display:flex; align-items:center; gap:6px; background:var(--primary-dark); color:var(--accent-soft);
+    padding:6px 12px 6px 8px; border-radius:999px; font-family:var(--font-mono); font-size:13px; font-weight:600;
+  }
+  .points-chip .pt-dot{width:16px; height:16px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--primary-dark);}
+
+  .content-area{flex:1; padding:18px 18px 100px; overflow-y:auto;}
+  .bottom-nav{
+    position:sticky; bottom:0; z-index:20; display:flex; background:var(--surface);
+    border-top:1px solid var(--line-soft); box-shadow:0 -8px 20px -16px rgba(22,36,29,0.4);
+  }
+  .nav-item{
+    flex:1; border:none; background:none; padding:12px 4px 10px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:var(--ink-soft); font-size:11px; font-weight:600;
+  }
+  .nav-item .nav-ico{font-size:19px; opacity:0.55; transition:opacity .15s ease, transform .15s ease;}
+  .nav-item.active{color:var(--primary);}
+  .nav-item.active .nav-ico{opacity:1; transform:translateY(-1px);}
+
+  /* section headers */
+  .section-title{font-family:var(--font-display); font-size:19px; font-weight:700; margin:2px 0 4px;}
+  .section-sub{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px;}
+  .eyebrow{font-size:11px; font-weight:700; letter-spacing:1.2px; color:var(--primary); text-transform:uppercase; margin:0 0 6px;}
+
+  /* popup banner */
+  .popup-banner{
+    background:linear-gradient(120deg, var(--primary), var(--primary-dark)); color:#fff; border-radius:var(--radius-md);
+    padding:16px 18px; margin-bottom:18px; position:relative; overflow:hidden;
+  }
+  .popup-banner::after{content:""; position:absolute; right:-30px; top:-30px; width:110px; height:110px; border-radius:50%; background:rgba(201,162,39,0.22);}
+  .popup-banner .pb-tag{font-size:10.5px; font-weight:700; letter-spacing:0.6px; color:var(--accent-soft); margin-bottom:6px; text-transform:uppercase;}
+  .popup-banner h4{margin:0 0 4px; font-size:15px; font-family:var(--font-display);}
+  .popup-banner p{margin:0; font-size:12.5px; opacity:0.85; line-height:1.5;}
+  .popup-close{position:absolute; top:10px; right:12px; background:rgba(255,255,255,0.16); border:none; color:#fff; width:22px; height:22px; border-radius:50%; font-size:12px;}
+
+  /* gauge (signature element) */
+  .gauge-card{
+    background:var(--surface); border-radius:var(--radius-lg); padding:22px 20px 18px; margin-bottom:18px;
+    border:1px solid var(--line-soft); box-shadow:var(--shadow);
+  }
+  .gauge-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;}
+  .gauge-points{font-family:var(--font-mono); font-size:30px; font-weight:600; color:var(--primary-dark); line-height:1;}
+  .gauge-points span{font-size:13px; font-weight:500; color:var(--ink-soft); margin-left:4px;}
+  .grade-badge{background:var(--accent-soft); color:#8a6d10; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700;}
+  .pill-gauge{position:relative; height:22px; border-radius:999px; background:var(--primary-tint); border:1.5px solid var(--line-soft); overflow:hidden; margin:10px 0 8px;}
+  .pill-gauge-fill{
+    position:absolute; inset:0; width:0%; border-radius:999px;
+    background:linear-gradient(90deg, var(--primary-light), var(--primary) 55%, var(--primary-dark));
+    transition:width .6s cubic-bezier(.2,.8,.2,1);
+  }
+  .pill-gauge-fill::after{
+    content:""; position:absolute; top:2px; left:6px; right:6px; height:5px; border-radius:999px; background:rgba(255,255,255,0.35);
+  }
+  .pill-gauge.sm{height:10px; margin:6px 0;}
+  .gauge-ticks{display:flex; justify-content:space-between; font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);}
+  .gauge-next{font-size:12px; color:var(--ink-soft); margin-top:8px;}
+  .gauge-next b{color:var(--primary);}
+
+  /* stat row */
+  .stat-row{display:flex; gap:10px; margin-bottom:18px;}
+  .cat-tile-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:20px;}
+  .cat-tile{
+    background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-md); padding:14px 12px;
+    text-align:left; display:flex; flex-direction:column; gap:6px; box-shadow:0 6px 16px -12px rgba(22,36,29,0.3);
+  }
+  .cat-tile-ico{font-size:18px;}
+  .cat-tile-name{font-size:12.5px; font-weight:700; line-height:1.3; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .cat-tile-count{font-size:11px; color:var(--ink-soft); font-family:var(--font-mono);}
+  .stat-box{flex:1; background:var(--surface); border-radius:var(--radius-md); padding:14px 12px; text-align:center; border:1px solid var(--line-soft);}
+  .stat-box .num{font-family:var(--font-mono); font-size:19px; font-weight:600; color:var(--primary-dark);}
+  .stat-box .lbl{font-size:11px; color:var(--ink-soft); margin-top:3px;}
+
+  /* content list */
+  .chip-row{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:16px; scrollbar-width:none;}
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex-shrink:0; padding:8px 15px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface);
+    font-size:12.5px; font-weight:600; color:var(--ink-soft); white-space:nowrap;
+  }
+  .chip.active{background:var(--primary); border-color:var(--primary); color:#fff;}
+  .card-list{display:flex; flex-direction:column; gap:12px;}
+  .content-card{
+    background:var(--surface); border-radius:var(--radius-md); padding:16px; border:1px solid var(--line-soft);
+    display:flex; gap:13px; align-items:flex-start; text-align:left; width:100%; box-shadow:0 6px 16px -12px rgba(22,36,29,0.3);
+  }
+  .content-ico{
+    width:42px; height:42px; border-radius:12px; background:var(--primary-tint); display:flex; align-items:center; justify-content:center;
+    font-size:18px; flex-shrink:0;
+  }
+  .content-card.done .content-ico{background:var(--accent-soft);}
+  .content-body{flex:1; min-width:0;}
+  .content-body .cat{font-size:10.5px; color:var(--primary); font-weight:700; letter-spacing:0.3px; margin-bottom:3px;}
+  .content-body h5{margin:0 0 4px; font-size:14.5px; font-weight:700; line-height:1.35;}
+  .content-body p{margin:0; font-size:12px; color:var(--ink-soft); line-height:1.5;}
+  .content-meta{display:flex; align-items:center; gap:8px; margin-top:8px;}
+  .pt-tag{font-family:var(--font-mono); font-size:11.5px; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:2px 8px; border-radius:999px;}
+  .done-tag{font-size:11px; font-weight:700; color:var(--primary);}
+  .empty-state{text-align:center; padding:50px 20px; color:var(--ink-soft);}
+  .empty-state .ico{font-size:34px; margin-bottom:10px;}
+
+  /* ranking */
+  .rank-row{
+    display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:var(--radius-md);
+    padding:13px 15px; margin-bottom:10px; border:1px solid var(--line-soft);
+  }
+  .rank-row.me{border-color:var(--primary); background:var(--primary-tint);}
+  .rank-num{width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; font-family:var(--font-mono); flex-shrink:0; background:var(--bg); color:var(--ink-soft);}
+  .rank-num.top1{background:linear-gradient(155deg,#F4D06F,#C9A227); color:#5c4600;}
+  .rank-num.top2{background:linear-gradient(155deg,#E4E4E4,#B7B7B7); color:#4a4a4a;}
+  .rank-num.top3{background:linear-gradient(155deg,#E3B08A,#C08152); color:#5a3416;}
+  .rank-info{flex:1; min-width:0;}
+  .rank-info .nm{font-size:13.5px; font-weight:700;}
+  .rank-info .dp{font-size:11px; color:var(--ink-soft);}
+  .rank-pt{font-family:var(--font-mono); font-weight:700; font-size:14px; color:var(--primary-dark); text-align:right; flex-shrink:0;}
+
+  /* modal / detail */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(22,36,29,0.5); display:flex; align-items:flex-end; justify-content:center;
+    z-index:100; backdrop-filter:blur(2px);
+  }
+  .modal-overlay.center{align-items:center; padding:20px;}
+  .modal-sheet{
+    background:var(--surface); width:100%; max-width:520px; border-radius:22px 22px 0 0; padding:26px 22px 30px;
+    max-height:88vh; overflow-y:auto; animation:slideUp .25s ease;
+  }
+  .modal-overlay.center .modal-sheet{border-radius:var(--radius-lg); max-height:85vh;}
+  @keyframes slideUp{from{transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+  .modal-handle{width:38px; height:4px; background:var(--line); border-radius:99px; margin:0 auto 18px;}
+  .modal-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; gap:10px;}
+  .modal-head h3{margin:0; font-family:var(--font-display); font-size:18px; line-height:1.4;}
+  .modal-close{background:var(--bg); border:none; width:28px; height:28px; border-radius:50%; flex-shrink:0; color:var(--ink-soft); font-size:13px;}
+  .modal-desc{font-size:13.5px; line-height:1.7; color:var(--ink-soft); margin-bottom:20px;}
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
+
+  .attach-section{margin-bottom:20px;}
+  .attach-loading{font-size:12.5px; color:var(--ink-soft); padding:16px 0; text-align:center;}
+  .attach-label{font-size:12px; font-weight:700; color:var(--primary); margin-bottom:10px;}
+  .attach-img-block{border:1px solid var(--line-soft); border-radius:var(--radius-md); overflow:hidden; margin-bottom:10px; background:var(--bg);}
+  .attach-img{width:100%; display:block; max-height:420px; object-fit:contain; background:#fff;}
+  .attach-dl-link{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; text-decoration:none; color:var(--ink);}
+  .attach-item{
+    display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--line-soft); border-radius:var(--radius-md);
+    margin-bottom:10px; text-decoration:none; color:var(--ink); background:var(--surface);
+  }
+  .attach-ico{font-size:18px; flex-shrink:0;}
+  .attach-fname{flex:1; font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .attach-dl-btn{flex-shrink:0; font-size:11.5px; font-weight:700; color:var(--primary); background:var(--primary-tint); padding:5px 10px; border-radius:999px; white-space:nowrap;}
+  .attach-manager{border:1px solid var(--line-soft); border-radius:12px; padding:8px; background:var(--bg); margin-bottom:2px;}
+  .attach-manage-row{display:flex; align-items:center; gap:8px; padding:7px 6px; border-bottom:1px solid var(--line-soft);}
+  .attach-manage-row:last-child{border-bottom:none;}
+  .attach-empty{font-size:12px; color:var(--ink-soft); padding:8px 4px;}
+  .upload-status{font-size:11.5px; color:var(--primary); margin-top:6px; min-height:14px;}
+
+  /* ---------- ADMIN ---------- */
+  .admin-shell{flex:1; display:flex; flex-direction:column; min-height:100vh;}
+  .admin-topbar{
+    display:flex; align-items:center; justify-content:space-between; padding:16px 26px; background:var(--primary-dark);
+    color:#fff; position:sticky; top:0; z-index:30;
+  }
+  .admin-topbar .wordmark-text b, .admin-topbar .wordmark-text span{color:#fff;}
+  .admin-topbar .wordmark-text span{opacity:0.6;}
+  .admin-top-actions{display:flex; align-items:center; gap:10px;}
+  .admin-top-actions .btn-ghost{border-color:rgba(255,255,255,0.3); color:#fff;}
+  .admin-tabs{
+    display:flex; gap:2px; background:var(--surface); padding:0 20px; overflow-x:auto; border-bottom:1px solid var(--line-soft);
+    position:sticky; top:60px; z-index:29; scrollbar-width:none;
+  }
+  .admin-tabs::-webkit-scrollbar{display:none;}
+  .admin-tab{
+    border:none; background:none; padding:14px 16px 12px; font-size:13.5px; font-weight:600; color:var(--ink-soft);
+    white-space:nowrap; border-bottom:2.5px solid transparent; display:flex; align-items:center; gap:6px;
+  }
+  .admin-tab.active{color:var(--primary); border-color:var(--primary);}
+  .admin-body{flex:1; padding:26px; max-width:1080px; margin:0 auto; width:100%;}
+  .admin-head-row{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:18px; gap:12px; flex-wrap:wrap;}
+
+  .kpi-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:24px;}
+  .kpi-card{background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-md); padding:16px 18px; box-shadow:0 6px 16px -12px rgba(22,36,29,0.25);}
+  .kpi-card .lbl{font-size:11.5px; color:var(--ink-soft); font-weight:600; margin-bottom:8px;}
+  .kpi-card .val{font-family:var(--font-mono); font-size:24px; font-weight:600; color:var(--primary-dark);}
+  .kpi-card .sub{font-size:11px; color:var(--accent); font-weight:700; margin-top:4px;}
+
+  .panel{background:var(--surface); border-radius:var(--radius-md); border:1px solid var(--line-soft); overflow:hidden; margin-bottom:22px;}
+  .panel-head{padding:16px 20px; border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center;}
+  .panel-head h3{margin:0; font-size:15px; font-family:var(--font-display);}
+  table.data-table{width:100%; border-collapse:collapse; font-size:13px;}
+  table.data-table th{text-align:left; padding:10px 20px; font-size:11px; color:var(--ink-soft); font-weight:700; background:var(--bg); text-transform:uppercase; letter-spacing:0.3px;}
+  table.data-table td{padding:12px 20px; border-top:1px solid var(--line-soft); vertical-align:middle;}
+  table.data-table tr:hover td{background:var(--primary-tint);}
+  .table-actions{display:flex; gap:6px;}
+  .mini-btn{border:none; background:var(--bg); border-radius:8px; padding:6px 10px; font-size:11.5px; font-weight:600; color:var(--ink-soft);}
+  .mini-btn:hover{background:var(--primary-light); color:var(--primary-dark);}
+  .mini-btn.danger:hover{background:var(--coral-soft); color:var(--coral);}
+  .status-dot{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700;}
+  .status-dot::before{content:""; width:7px; height:7px; border-radius:50%;}
+  .status-dot.on{color:var(--primary);} .status-dot.on::before{background:var(--primary);}
+  .status-dot.off{color:var(--ink-soft);} .status-dot.off::before{background:var(--line);}
+
+  .tier-list{display:flex; flex-direction:column; gap:10px;}
+  .tier-row{display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-md); padding:14px 18px;}
+  .tier-dot{width:14px; height:14px; border-radius:50%; flex-shrink:0;}
+  .tier-info{flex:1;}
+  .tier-info b{font-size:14px;}
+  .tier-info div{font-size:12px; color:var(--ink-soft); font-family:var(--font-mono); margin-top:2px;}
+
+  .closing-box{background:linear-gradient(120deg, var(--primary), var(--primary-dark)); border-radius:var(--radius-lg); padding:26px; color:#fff; margin-bottom:22px;}
+  .closing-box .eyebrow{color:var(--accent-soft);}
+  .closing-box h3{font-family:var(--font-display); margin:0 0 8px; font-size:19px;}
+  .closing-box p{font-size:13px; opacity:0.85; margin:0 0 18px; line-height:1.6; max-width:460px;}
+
+  @media (max-width:600px){
+    .admin-body{padding:18px;}
+    .admin-topbar{padding:14px 16px;}
+    .admin-tabs{padding:0 10px; top:58px;}
+    table.data-table{font-size:12px;}
+    table.data-table th, table.data-table td{padding:10px 12px;}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* ============================= SUPABASE SETUP ============================= */
+const SUPABASE_URL = 'https://qfyesgkwvmkmqlcbgypg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_iet783ruHNzJ2YAXsClojQ_2wmtsUhp';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ============================= STORAGE HELPERS (Supabase-backed, shared across everyone) ============================= */
+async function loadShared(key, fallback){
+  try{
+    const { data, error } = await sb.from('app_data').select('value').eq('key', key).maybeSingle();
+    if(error || !data) return fallback;
+    return data.value;
+  }catch(e){ console.error('load failed', key, e); return fallback; }
+}
+async function saveShared(key, value){
+  try{
+    const { error } = await sb.from('app_data').upsert({ key, value, updated_at: new Date().toISOString() });
+    if(error) console.error('save failed', key, error);
+  }catch(e){ console.error('save failed', key, e); }
+}
+async function uploadAttachment(file){
+  const path = Date.now() + '_' + Math.random().toString(36).slice(2,8) + '_' + file.name;
+  const { error } = await sb.storage.from('attachments').upload(path, file);
+  if(error) throw error;
+  const { data } = sb.storage.from('attachments').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/* ============================= SEED DATA ============================= */
+const SEED_EMPLOYEES = [
+  {id:'ildong', name:'일동제약', dept:'영업팀', region:'전국'},
+  {id:'donga', name:'동아제약', dept:'영업팀', region:'전국'},
+];
+const SEED_CONTENTS = [
+  {id:'M1', title:'신장애 환자에도 안전한 모티리톤', category:'신장애', points:60, active:true,
+   desc:'투석 및 당뇨병성 신증 등 신장애 환자는 요독증과 자율신경병증으로 위장관운동이 저하되어 조기포만감·복부팽만·오심구토를 흔히 호소합니다. 모티리톤은 간대사 위주로 배설되어 신장 배설 부담이 적어 신기능 저하 환자에서도 안전하게 처방할 수 있으며, CKD 중증도가 높을수록 위마비 위험이 증가한다는 대규모 데이터도 함께 확인할 수 있습니다.',
+   files:['모티리톤_신장애.png','신장애_환자에_모티리톤_처방_필요성.pptx','신장애.pdf']},
+  {id:'M2', title:'기립성빈맥증후군(POTS)과 모티리톤', category:'신경계 동반질환', points:55, active:true,
+   desc:'POTS 환자의 약 67%가 심각한 위장관 장애를 동반합니다. 모티리톤의 5-HT1A/5-HT4/D2 Triple Action이 자율신경계 불균형으로 인한 상복부 통증과 압박감을 표적 개선하며, 24주 교차임상에서 심각한 이상반응 없이 장기간 안전하게 처방 가능함을 확인했습니다 (JNM 2026).',
+   files:['기립성빈맥증후군1__1_.png','기립성빈맥증후군2__1_.png','JNM___POTS_기립성빈맥증후군_환자_대상_연구.pptx']},
+  {id:'M3', title:'편두통·두통·오심 개선 - 모티리톤', category:'신경계 동반질환', points:65, active:true,
+   desc:'서울대병원 신경과 김만호 교수팀의 임상(오심 동반 편두통 환자 110명, 4주)에서 모티리톤은 오심 발생일수 53.7%, 두통일수 52.2%, 급성기 구제약물 사용일수 44.8% 감소를 보였습니다. 추체외로 증상 0건으로 안전성도 함께 확인했습니다.',
+   files:['모티리톤_편두통__두통__구토__오심_개선__책임연구자_서울대김만호교수님.pptx','편두통1.png','편두통2.png','편두통3.png','편두통_임상_활용_1.png','편두통_임상_활용_2.png']},
+  {id:'M4', title:'NERD와 삶의 질', category:'GERD/NERD', points:45, active:true,
+   desc:'비미란성 역류질환(NERD)은 내시경 소견과 무관하게 흉통, 수면장애, 불안 등 삶의 질 전반을 악화시킵니다. 모티리톤의 위장관 운동 개선 효과가 산 억제만으로 해결되지 않는 증상까지 관리하는 데 도움이 됩니다.',
+   files:['NERD_삶의질1.png','NERD_삶의질2.png','NERD와_삶의질.pptx']},
+  {id:'M5', title:'Prokinetics 성분별 CV Risk 비교', category:'안전성', points:60, active:true,
+   desc:'국내 15,621명 대상 빅데이터 자가-대조 연구 결과, 중추 도파민 D2 길항제(IRR 2.14)·말초 D2 길항제(IRR 1.37)·5-HT4 작용제(IRR 1.29)와 달리 모티리톤(DA-9701)은 심혈관계 사건 위험 증가가 관찰되지 않았습니다(IRR 1.00, 95% CI 0.79-1.26).',
+   files:['CVrisk_비교1.png','CVrisk_비교2.png','CVrisk_비교_한장정리.png','모티리톤_CV_Risk_안전.pptx']},
+  {id:'M6', title:'P-CAB·PPI 병용 시 모티리톤', category:'병용요법', points:55, active:true,
+   desc:'P-CAB/PPI는 두통·오심 등 부작용이 있고 위배출지연을 유발할 수 있습니다. 모티리톤 병용은 이러한 부작용을 줄이면서 GERD 증상 개선 효과를 1.22~1.47배 높이고, 위배출 지연을 유의하게 개선합니다.',
+   files:['모티리톤_피캡피피아이.pptx','P-CAB_PPI_1.png','P-CAB_PPI_2.png','PPI__P-CAB_병용1.png','PPI__P-CAB_병용2.png','PPI_PCAB병용.png','PPI_PCAB병용_간추가_.png']},
+  {id:'M7', title:'당뇨병 환자와 모티리톤', category:'당뇨', points:55, active:true,
+   desc:'인슐린 비의존성 당뇨환자의 약 70%가 만성 위장관 증상을 호소하며, 2형 당뇨환자의 위마비 유병률은 약 30%, Metformin 복용 시 위마비 위험이 1.97배 증가합니다. 모티리톤은 복합기전으로 이러한 소화기 이상반응 예방에 도움이 됩니다.',
+   files:['당뇨_병용_슬라이드.pptx','당뇨.png','당뇨_GERD.pdf','당뇨병용1.png','당뇨병용2.png']},
+  {id:'M8', title:'항우울제 복용 환자에 모티리톤', category:'병용요법', points:50, active:true,
+   desc:'SSRI/SNRI 항우울제는 세로토닌·노르에피네프린 수용체가 장 신경계에도 분포해 소화불량·오심·변비 발생율이 급증합니다(Duloxetine·Venlafaxine 오심 OR 4.0 이상). 모티리톤 병용으로 이러한 소화기 부작용을 관리할 수 있습니다.',
+   files:['항우울제와_모티리톤1.png','항우울제와_모티리톤2.png']},
+  {id:'M9', title:'속쓰림엔 모티리톤 (레바미피드 병용)', category:'위염/속쓰림', points:40, active:true,
+   desc:'모티리톤의 위배출지연·위순응장애·위대장과민 복합 개선 효과와 함께, 레바미피드 병용 시 만성 위염 병리학적 점수와 치료 효과율이 유의하게 개선된 임상 데이터를 정리했습니다.',
+   files:['모티리톤_삼일레바미피드.png']},
+  {id:'M10', title:'안과 환자에 모티리톤', category:'진료과별 활용', points:35, active:true,
+   desc:'안과 질환의 안통·두통은 장-뇌 축(Gut-Brain Connection)으로 연결됩니다. NSAIDs·항생제 처방 시 발생하는 소화불량·장내 미생물 불균형에 모티리톤의 Triple Action이 도움이 됩니다.',
+   files:['안과_디테일.png']},
+  {id:'M11', title:'Nicergoline(사미온) 처방 시 모티리톤', category:'병용요법', points:35, active:true,
+   desc:'Nicergoline은 자율신경계 및 콜린성 활성에 영향을 주어 복부팽만감·소화불량·상복부 통증을 유발할 수 있습니다. 모티리톤 병용으로 이러한 소화기 증상을 개선할 수 있습니다.',
+   files:['Nicergoline_사미온__병용.png']},
+  {id:'M12', title:'모티리톤 & 코로나 약물', category:'감염질환', points:40, active:true,
+   desc:'코로나19 회복 후에도 소화불량·과민성대장증후군 등 소화기 후유증이 이어질 수 있고, 감기약(호흡기관용약·진해거담제·효소제제) 역시 소화불량·구역·구토를 유발할 수 있습니다. 관련 문헌과 모티리톤의 개선 기전을 정리했습니다.',
+   files:['코로나1.png','코로나2.png']},
+  {id:'M13', title:'심평원 급여적정성 이슈와 이토프리드 대응', category:'급여/제도', points:45, active:true,
+   desc:'2024년 급여적정성 재평가에서 이토프리드 등 53개 품목이 급여적정성 없음 판정을 받았습니다. 모티리톤은 Triple Action 기전과 다수의 임상 근거를 바탕으로 임상적 유용성을 인정받고 있는 유일한 Prokinetics입니다.',
+   files:['급여적정성_이슈_이토프라이드_대응.png']},
+  {id:'M14', title:'모티리톤 VS Itopride', category:'경쟁제품비교', points:40, active:true,
+   desc:'모티리톤과 Itopride는 모두 D2에 작용하지만, Itopride는 용량 의존적으로 프로락틴을 상승시키는 반면 모티리톤은 임상에서 프로락틴 수치 증가가 관찰되지 않아 유즙분비 등 부작용 우려가 낮습니다(1/70 수준).',
+   files:['이토스위칭_VS모사_.png']},
+  {id:'M15', title:'모티리톤 VS 모사프라이드', category:'경쟁제품비교', points:40, active:true,
+   desc:'위배출 지연 동물모델에서 모티리톤은 모사프라이드보다 위배출 개선 효과가 우수했고, 기능성소화불량 환자의 NDI 증상점수 개선 폭도 모사프라이드 대비 크게 나타났습니다.',
+   files:['모티리톤VS모사프라이드.png']},
+  {id:'M16', title:'모티리톤 안전성 데이터 (RCT 10건)', category:'안전성', points:45, active:true,
+   desc:'2011년 발매 이후 총 10개 RCT(누적 1,351명)에서 모티리톤으로 인한 부작용·합병증 보고가 없었습니다. Itopride 대비 프로락틴 수치도 4주 후 오히려 감소하는 경향을 보였습니다.',
+   files:['안정성__Ito_비교.png']},
+  {id:'M17', title:'모티리톤 제품정보 및 상병코드', category:'제품정보', points:30, active:true,
+   desc:'모티리톤(현호색·견우자) 30mg, 1일 3회 1정 식전 투여. 처방 가능 상병코드(K21, K29 계열, K30, K59.0, R11, R12 등)를 한눈에 정리했습니다.',
+   files:['Drug_information___상병코드.png']},
+  {id:'M18', title:'GERD 처방 사례와 모티리톤', category:'GERD/NERD', points:35, active:true,
+   desc:'PPI와 모티리톤을 병용한 실제 처방전 예시와 함께, 공격인자억제제로 인한 위배출 지연을 모티리톤이 개선하고 난치성 GERD에서 PPI+Prokinetics 병용 시 증상개선효과가 1.47배 높아지는 근거를 정리했습니다.',
+   files:['GERD_처방전.png']},
+  {id:'M19', title:'맥페란 이슈와 파킨슨병 환자 안전 처방', category:'파킨슨', points:40, active:true,
+   desc:'파킨슨병 환자에게 금기인 맥페란(Metoclopramide) 처방 관련 유죄 판결 논란을 계기로, 파킨슨 병력 확인의 중요성과 함께 추체외로 부작용 없이 안전하게 처방 가능한 모티리톤의 대안적 위치를 살펴봅니다.',
+   files:['맥페란.png']},
+  {id:'M20', title:'항바이러스제 복용 환자에 모티리톤', category:'감염질환', points:35, active:true,
+   desc:'여름철 증가하는 Famciclovir·Acyclovir·Valacyclovir 등 항바이러스제는 구역·구토·복통·소화불량을 유발할 수 있습니다. 모티리톤 병용으로 이러한 소화기 이상반응을 예방할 수 있습니다.',
+   files:['항바이러스제와_모티리톤.png']},
+  {id:'M21', title:'과민성대장증후군(IBS-C)과 모티리톤의 변비 개선효과', category:'변비/IBS', points:50, active:true,
+   desc:'BSFS Type 1~2가 전체 배변의 25% 이상인 변비형 IBS(IBS-C) 환자에서, 모티리톤 복용 시 대장통과시간(CTT)이 약 32% 유의하게 감소하고 배변 관련 7가지 증상도 함께 개선되었습니다.',
+   files:['과민성대장증후군과_모티리톤의_변비_개선효과.png']},
+  {id:'M22', title:'모티리톤, 복합기전의 필요성 (5세대 Prokinetics)', category:'작용기전', points:50, active:true,
+   desc:'Rome IV 기준상 기능성소화불량은 병태생리가 다양해 복합적인 작용기전의 약물이 효과적입니다. 모티리톤은 D2·5-HT4·5-HT1A에 모두 작용하는 유일한 5세대 Prokinetics로, 위배출지연뿐 아니라 위순응장애·위대장과민까지 개선합니다.',
+   files:['모티리톤_복합기전의_필요성.png']},
+  {id:'M23', title:'파킨슨병 환자에게도 안전한 모티리톤', category:'파킨슨', points:55, active:true,
+   desc:'PASS-GI 연구(144례, 12주)에서 모티리톤은 위약 대비 소화기 증상을 약 2배, 삶의 질을 약 4배 개선했으며, UPDRS 파킨슨 증상척도 악화 없이 장기간 안전하게 처방 가능함을 확인했습니다.',
+   files:['파킨슨환자에도_안전_모티리톤.png','파킨슨환자에도_안전_모티리톤2.png']},
+  {id:'M24', title:'Prokinetics 병용 삭감 이슈와 ATC코드', category:'급여/제도', points:35, active:true,
+   desc:'Prokinetics 2종 이상 병용 처방은 삭감 대상이지만, 모티리톤은 ATC코드가 A16AX로 Prokinetics(A03FA)와 달라 병용 처방이 가능합니다. 삭감 걱정 없이 처방하는 방법을 Q&A로 정리했습니다.',
+   files:['2종병용.jpg']},
+  {id:'M25', title:'변비 유발 약제와 모티리톤 병용', category:'변비/IBS', points:40, active:true,
+   desc:'NSAIDs, 칼슘채널차단제(CCB), 이뇨제 등은 대표적인 변비 유발 약제입니다. 모티리톤 복용 시 대장통과시간이 약 32% 감소하는 등 배변 관련 증상이 유의하게 개선됩니다.',
+   files:['변비유발약물과_모티리톤.png']},
+  {id:'M26', title:'다약제 복용 고령환자와 모티리톤', category:'노인/다약제', points:35, active:true,
+   desc:'고령자는 약물 흡수·대사·배설 과정의 변화로 다약제 복용 시 속쓰림·소화불량·위장관 출혈 위험이 커집니다. 소화기약제 중 모티리톤만 유일하게 속쓰림(R12) 상병코드를 보유하고 있어 다약제 복용 노인환자에 병용하기 좋습니다.',
+   files:['다약제복용_속쓰림상병.png']},
+  {id:'M27', title:'우울증과 소화불량, 모티리톤', category:'병용요법', points:40, active:true,
+   desc:'우울증과 기능성 소화불량은 장-뇌 축을 통해 밀접하게 연관되어 있습니다. 우울 증상을 가진 환자에서 소화기 증상 관리에 모티리톤이 어떻게 도움이 되는지 정리한 자료입니다.',
+   files:['우울증과_소화불량_모티리톤_.pptx']},
+];
+const SEED_POPUPS = [
+  {id:'P1', title:'8월 신규 콘텐츠 업데이트 안내', message:'2026 임상 데이터 업데이트 콘텐츠가 새로 등록되었습니다. 지금 확인하고 포인트를 받아보세요.', active:true},
+];
+const SEED_CATEGORIES = ['신장애','신경계 동반질환','GERD/NERD','안전성','병용요법','당뇨','위염/속쓰림','진료과별 활용','감염질환','급여/제도','경쟁제품비교','제품정보','파킨슨','변비/IBS','작용기전','노인/다약제'];
+
+const CONTENT_ICONS = {video:'🎬', pdf:'📄', card:'🗂️'};
+const CONTENT_TYPE_LABEL = {video:'영상', pdf:'PDF', card:'카드뉴스'};
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20MB per file (Supabase Storage)
+
+/* ---- file / attachment helpers (item can be: string local asset | {name,url} uploaded/external) ---- */
+function fileName(item){ return typeof item==='string' ? item : (item && item.name) || ''; }
+function fileExt(item){ const n = fileName(item); const m = /\.([a-zA-Z0-9]+)$/.exec(n||''); return m ? m[1].toLowerCase() : ''; }
+function isImageFile(item){ return ['png','jpg','jpeg','gif','webp'].includes(fileExt(item)); }
+function fileIcon(item){
+  const ext = fileExt(item);
+  if(isImageFile(item)) return '🖼️';
+  if(ext==='pptx' || ext==='ppt') return '📊';
+  if(ext==='pdf') return '📄';
+  return '📎';
+}
+function fileHref(item){
+  if(typeof item==='string') return 'assets/' + encodeURI(item);
+  if(item.url) return item.url;
+  return '#';
+}
+function primaryIcon(c){
+  if(c.files && c.files.length){
+    if(c.files.some(f=>['pptx','ppt'].includes(fileExt(f)))) return '📊';
+    if(c.files.some(f=>fileExt(f)==='pdf')) return '📄';
+    return '🖼️';
+  }
+  return CONTENT_ICONS[c.type] || '📄';
+}
+
+/* ============================= APP STATE ============================= */
+let DB = { employees:[], contents:[], popups:[], categories:[] };
+let S = {
+  screen:'login',            // login | rep | admin
+  loginErr:'',
+  currentUser:null,
+  repTab:'home',
+  contentFilter:'전체',
+  adminTab:'overview',
+  modal:null,                // {type,...}
+  dismissedPopups:[],
+  ready:false,
+};
+
+async function initDB(){
+  const existingEmployees = await loadShared('employees', null);
+  DB.employees  = existingEmployees ?? SEED_EMPLOYEES;
+  DB.contents   = await loadShared('contents', null)   ?? SEED_CONTENTS;
+  DB.popups     = await loadShared('popups', null)     ?? SEED_POPUPS;
+  DB.categories = await loadShared('categories', null) ?? SEED_CATEGORIES;
+  if(!existingEmployees) await persistAll(); // first run: seed the database
+  S.ready = true;
+  render();
+}
+async function persistAll(){
+  await Promise.all([
+    saveShared('employees', DB.employees),
+    saveShared('contents', DB.contents),
+    saveShared('popups', DB.popups),
+    saveShared('categories', DB.categories),
+  ]);
+}
+async function persist(key){
+  const map = {employees:'employees', contents:'contents', popups:'popups', categories:'categories'};
+  if(map[key]) await saveShared(map[key], DB[key]);
+}
+
+/* ============================= HELPERS ============================= */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function findEmployee(id){ return DB.employees.find(e=>e.id===id); }
+function refreshCurrentUser(){ if(S.currentUser) S.currentUser = findEmployee(S.currentUser.id) || S.currentUser; }
+function activePopups(){ return DB.popups.filter(p=>p.active && !S.dismissedPopups.includes(p.id)); }
+function categories(){ return ['전체', ...DB.categories]; }
+function fmtNum(n){ return Number(n||0).toLocaleString('ko-KR'); }
+
+/* ============================= RENDER ROOT ============================= */
+function render(){
+  const root = document.getElementById('root');
+  if(!S.ready){ root.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:13px;">불러오는 중…</div>`; return; }
+  if(S.screen==='login') root.innerHTML = renderLogin();
+  else if(S.screen==='rep') root.innerHTML = renderRepShell();
+  else if(S.screen==='admin') root.innerHTML = renderAdminShell();
+  if(S.modal) root.innerHTML += renderModal();
+  attachHandlers();
+}
+
+/* ============================= LOGIN ============================= */
+function renderLogin(){
+  return `
+  <div class="login-screen">
+    <div class="login-card">
+      <div class="login-mark"></div>
+      <h1 class="login-title">MOTILITONE WORK</h1>
+      <p class="login-sub">모티리톤 디테일 원스탑 플랫폼</p>
+
+      <p class="login-form-title">로그인</p>
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label>아이디</label>
+          <input type="text" name="uid" placeholder="아이디를 입력하세요" required>
+        </div>
+        <div class="field">
+          <label>비밀번호</label>
+          <input type="password" name="pw" placeholder="비밀번호를 입력하세요" required>
+        </div>
+        ${S.loginErr ? `<div class="error-text">${esc(S.loginErr)}</div>` : ''}
+        <div class="hint">💡 아이디와 비밀번호는 동일합니다<br>예) ildong / donga · 관리자는 admin</div>
+        <button type="submit" class="btn btn-primary btn-block">로그인</button>
+      </form>
+    </div>
+  </div>`;
+}
+
+/* ============================= REP SHELL ============================= */
+function renderRepShell(){
+  refreshCurrentUser();
+  const u = S.currentUser;
+  return `
+  <div class="app-shell">
+    <div class="topbar">
+      <div class="wordmark">
+        <div class="pill-mark"></div>
+        <div class="wordmark-text"><b>MOTILITONE</b><span>WORK</span></div>
+      </div>
+      <div class="topbar-right">
+        <span style="font-size:12px; font-weight:700; color:var(--ink-soft);">${esc(u.name)}</span>
+        <button class="icon-btn" data-act="logout" title="로그아웃">⎋</button>
+      </div>
+    </div>
+    <div class="content-area">
+      ${S.repTab==='home' ? renderRepHome(u) : ''}
+      ${S.repTab==='content' ? renderRepContent(u) : ''}
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-item ${S.repTab==='home'?'active':''}" data-act="repTab" data-tab="home"><span class="nav-ico">🏠</span>홈</button>
+      <button class="nav-item ${S.repTab==='content'?'active':''}" data-act="repTab" data-tab="content"><span class="nav-ico">📋</span>콘텐츠</button>
+    </div>
+  </div>`;
+}
+
+function renderCategoryTile(cat){
+  const count = DB.contents.filter(c=>c.active && c.category===cat).length;
+  return `
+    <button class="cat-tile" data-act="filterContent" data-cat="${esc(cat)}" data-tab="content">
+      <div class="cat-tile-ico">🏷️</div>
+      <div class="cat-tile-name">${esc(cat)}</div>
+      <div class="cat-tile-count">${count}개</div>
+    </button>`;
+}
+
+function renderRepHome(u){
+  const pops = activePopups();
+  const totalCount = DB.contents.filter(c=>c.active).length;
+  const recent = DB.contents.filter(c=>c.active).slice(-4).reverse();
+  return `
+    ${pops.map(p=>`
+      <div class="popup-banner">
+        <button class="popup-close" data-act="dismissPopup" data-id="${p.id}">✕</button>
+        <div class="pb-tag">공지</div>
+        <h4>${esc(p.title)}</h4>
+        <p>${esc(p.message)}</p>
+      </div>`).join('')}
+
+    <p class="eyebrow">안녕하세요, ${esc(u.name)}님</p>
+    <h2 class="section-title">모티리톤 디테일 자료실</h2>
+    <p class="section-sub">카테고리별로 정리된 디테일 자료를 확인하세요 · 총 ${totalCount}건</p>
+
+    <p class="eyebrow" style="margin-top:6px;">카테고리 바로가기</p>
+    <div class="cat-tile-grid">
+      ${DB.categories.map(cat=>renderCategoryTile(cat)).join('')}
+    </div>
+
+    <p class="eyebrow">최신 자료</p>
+    <div class="card-list">
+      ${recent.map(c=>renderContentCard(c)).join('')}
+    </div>
+  `;
+}
+
+function renderContentCard(c){
+  const fileCount = (c.files && c.files.length) || 0;
+  const subLabel = fileCount ? `첨부자료 ${fileCount}개` : '자료 준비중';
+  return `
+    <button class="content-card" data-act="openContent" data-id="${c.id}">
+      <div class="content-ico">${primaryIcon(c)}</div>
+      <div class="content-body">
+        <div class="cat">${esc(c.category)}</div>
+        <h5>${esc(c.title)}</h5>
+        <p>${esc(subLabel)}</p>
+      </div>
+    </button>`;
+}
+
+function renderRepContent(u){
+  const cats = categories();
+  const list = DB.contents.filter(c=>c.active && (S.contentFilter==='전체' || c.category===S.contentFilter));
+  return `
+    <h2 class="section-title">콘텐츠</h2>
+    <p class="section-sub">카테고리를 선택해서 자료를 찾아보세요</p>
+    <div class="chip-row">
+      ${cats.map(cat=>`<button class="chip ${S.contentFilter===cat?'active':''}" data-act="filterContent" data-cat="${esc(cat)}">${esc(cat)}</button>`).join('')}
+    </div>
+    <div class="card-list">
+      ${list.length ? list.map(c=>renderContentCard(c)).join('') : `<div class="empty-state"><div class="ico">📭</div>해당 카테고리에 콘텐츠가 없습니다</div>`}
+    </div>
+  `;
+}
+
+/* ============================= ADMIN SHELL ============================= */
+const ADMIN_TABS = [
+  {key:'overview', label:'현황', ico:'📊'},
+  {key:'content', label:'콘텐츠', ico:'📋'},
+  {key:'categories', label:'카테고리', ico:'🏷️'},
+  {key:'employees', label:'계정 관리', ico:'👥'},
+  {key:'popups', label:'팝업 관리', ico:'📣'},
+];
+function renderAdminShell(){
+  return `
+  <div class="admin-shell">
+    <div class="admin-topbar">
+      <div class="wordmark">
+        <div class="pill-mark"></div>
+        <div class="wordmark-text"><b>MOTILITONE WORK</b><span>관리자</span></div>
+      </div>
+      <div class="admin-top-actions">
+        <button class="btn btn-ghost btn-sm" data-act="refreshAdmin">🔄 새로고침</button>
+        <button class="btn btn-ghost btn-sm" data-act="logout">로그아웃</button>
+      </div>
+    </div>
+    <div class="admin-tabs">
+      ${ADMIN_TABS.map(t=>`<button class="admin-tab ${S.adminTab===t.key?'active':''}" data-act="adminTab" data-tab="${t.key}">${t.ico} ${t.label}</button>`).join('')}
+    </div>
+    <div class="admin-body">
+      ${S.adminTab==='overview' ? renderAdminOverview() : ''}
+      ${S.adminTab==='content' ? renderAdminContent() : ''}
+      ${S.adminTab==='categories' ? renderAdminCategories() : ''}
+      ${S.adminTab==='employees' ? renderAdminEmployees() : ''}
+      ${S.adminTab==='popups' ? renderAdminPopups() : ''}
+    </div>
+  </div>`;
+}
+
+function renderAdminOverview(){
+  const activeContents = DB.contents.filter(c=>c.active).length;
+  const dist = DB.categories.map(cat=>({name:cat, count: DB.contents.filter(c=>c.category===cat).length}));
+  const maxDist = Math.max(1, ...dist.map(d=>d.count));
+  return `
+    <div class="admin-head-row">
+      <div><h2 class="section-title" style="margin-bottom:2px;">현황</h2><p class="section-sub" style="margin:0;">전체 운영 지표</p></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="lbl">계정 수</div><div class="val">${DB.employees.length}개</div></div>
+      <div class="kpi-card"><div class="lbl">전체 콘텐츠</div><div class="val">${DB.contents.length}건</div></div>
+      <div class="kpi-card"><div class="lbl">운영중 콘텐츠</div><div class="val">${activeContents}/${DB.contents.length}</div></div>
+      <div class="kpi-card"><div class="lbl">카테고리 수</div><div class="val">${DB.categories.length}개</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>카테고리별 콘텐츠 분포</h3></div>
+      <div style="padding:18px 20px;">
+        ${dist.map(d=>`
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <div style="width:140px; font-size:12.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(d.name)}</div>
+            <div style="flex:1; background:var(--bg); border-radius:99px; height:12px; overflow:hidden;">
+              <div style="width:${(d.count/maxDist)*100}%; background:var(--primary); height:100%; border-radius:99px;"></div>
+            </div>
+            <div style="width:34px; text-align:right; font-family:var(--font-mono); font-size:12px;">${d.count}건</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderAdminContent(){
+  return `
+    <div class="admin-head-row">
+      <div><h2 class="section-title" style="margin-bottom:2px;">콘텐츠 관리</h2><p class="section-sub" style="margin:0;">디테일 자료 등록 및 관리</p></div>
+      <button class="btn btn-primary btn-sm" data-act="newContent">+ 콘텐츠 등록</button>
+    </div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>제목</th><th>카테고리</th><th>첨부</th><th>상태</th><th>관리</th></tr></thead>
+        <tbody>
+          ${DB.contents.map(c=>`
+            <tr>
+              <td style="font-weight:600;max-width:260px;">${primaryIcon(c)} ${esc(c.title)}</td>
+              <td>${esc(c.category)}</td>
+              <td>${(c.files&&c.files.length)||0}개</td>
+              <td><span class="status-dot ${c.active?'on':'off'}">${c.active?'운영중':'비활성'}</span></td>
+              <td><div class="table-actions">
+                <button class="mini-btn" data-act="editContent" data-id="${c.id}">수정</button>
+                <button class="mini-btn danger" data-act="deleteContent" data-id="${c.id}">삭제</button>
+              </div></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAdminCategories(){
+  return `
+    <div class="admin-head-row">
+      <div><h2 class="section-title" style="margin-bottom:2px;">카테고리 관리</h2><p class="section-sub" style="margin:0;">콘텐츠 필터에 노출되는 카테고리 목록</p></div>
+      <button class="btn btn-primary btn-sm" data-act="newCategory">+ 카테고리 추가</button>
+    </div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>카테고리명</th><th>사용중인 콘텐츠</th><th>관리</th></tr></thead>
+        <tbody>
+          ${DB.categories.map(cat=>{
+            const cnt = DB.contents.filter(c=>c.category===cat).length;
+            return `
+            <tr>
+              <td style="font-weight:600;">${esc(cat)}</td>
+              <td>${cnt}개</td>
+              <td><div class="table-actions">
+                <button class="mini-btn" data-act="editCategory" data-name="${esc(cat)}">수정</button>
+                <button class="mini-btn danger" data-act="deleteCategory" data-name="${esc(cat)}">삭제</button>
+              </div></td>
+            </tr>`;
+          }).join('')}
+          ${!DB.categories.length ? `<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);padding:24px;">등록된 카테고리가 없습니다</td></tr>`:''}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAdminEmployees(){
+  return `
+    <div class="admin-head-row">
+      <div><h2 class="section-title" style="margin-bottom:2px;">계정 관리</h2><p class="section-sub" style="margin:0;">로그인 계정 등록 및 관리</p></div>
+      <button class="btn btn-primary btn-sm" data-act="newEmployee">+ 계정 등록</button>
+    </div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>아이디</th><th>이름</th><th>소속</th><th>지역</th><th>관리</th></tr></thead>
+        <tbody>
+          ${DB.employees.map(e=>`
+            <tr>
+              <td style="font-family:var(--font-mono);">${esc(e.id)}</td>
+              <td style="font-weight:600;">${esc(e.name)}</td>
+              <td>${esc(e.dept)}</td>
+              <td>${esc(e.region)}</td>
+              <td><div class="table-actions">
+                <button class="mini-btn" data-act="editEmployee" data-id="${e.id}">수정</button>
+                <button class="mini-btn danger" data-act="deleteEmployee" data-id="${e.id}">삭제</button>
+              </div></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAdminPopups(){
+  return `
+    <div class="admin-head-row">
+      <div><h2 class="section-title" style="margin-bottom:2px;">팝업 관리</h2><p class="section-sub" style="margin:0;">홈 화면에 노출되는 공지 팝업</p></div>
+      <button class="btn btn-primary btn-sm" data-act="newPopup">+ 팝업 등록</button>
+    </div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>제목</th><th>내용</th><th>상태</th><th>관리</th></tr></thead>
+        <tbody>
+          ${DB.popups.map(p=>`
+            <tr>
+              <td style="font-weight:600;max-width:220px;">${esc(p.title)}</td>
+              <td style="color:var(--ink-soft); max-width:340px;">${esc(p.message)}</td>
+              <td><button class="mini-btn" data-act="togglePopup" data-id="${p.id}"><span class="status-dot ${p.active?'on':'off'}">${p.active?'노출중':'숨김'}</span></button></td>
+              <td><div class="table-actions">
+                <button class="mini-btn" data-act="editPopup" data-id="${p.id}">수정</button>
+                <button class="mini-btn danger" data-act="deletePopup" data-id="${p.id}">삭제</button>
+              </div></td>
+            </tr>`).join('')}
+          ${!DB.popups.length ? `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px;">등록된 팝업이 없습니다</td></tr>`:''}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* ============================= MODALS ============================= */
+function renderModal(){
+  const m = S.modal;
+  if(!m) return '';
+  if(m.type==='contentDetail') return modalContentDetail(m);
+  if(m.type==='contentForm') return modalContentForm(m);
+  if(m.type==='employeeForm') return modalEmployeeForm(m);
+  if(m.type==='categoryForm') return modalCategoryForm(m);
+  if(m.type==='popupForm') return modalPopupForm(m);
+  return '';
+}
+
+function renderAttachImageRow(f){
+  return '<div class="attach-img-block">'
+    + '<img class="attach-img" src="' + fileHref(f) + '" alt="' + esc(fileName(f)) + '" loading="lazy" onerror="this.parentElement.style.display=\'none\'">'
+    + '<a class="attach-dl-link" href="' + fileHref(f) + '" download="' + esc(fileName(f)) + '">'
+    + '<span class="attach-fname">🖼️ ' + esc(fileName(f)) + '</span>'
+    + '<span class="attach-dl-btn">다운로드 ⬇</span>'
+    + '</a>'
+    + '</div>';
+}
+function renderAttachDocRow(f){
+  return '<a class="attach-item" href="' + fileHref(f) + '" download="' + esc(fileName(f)) + '">'
+    + '<span class="attach-ico">' + fileIcon(f) + '</span>'
+    + '<span class="attach-fname">' + esc(fileName(f)) + '</span>'
+    + '<span class="attach-dl-btn">다운로드 ⬇</span>'
+    + '</a>';
+}
+function renderAttachSection(c){
+  const files = c.files || [];
+  if(!files.length) return '';
+  const images = files.filter(isImageFile);
+  const docs = files.filter(f=>!isImageFile(f));
+  let html = '<div class="attach-section"><div class="attach-label">📎 첨부 자료 ' + files.length + '개</div>';
+  for(const f of images) html += renderAttachImageRow(f);
+  for(const f of docs) html += renderAttachDocRow(f);
+  html += '</div>';
+  return html;
+}
+
+function modalContentDetail({id}){
+  const c = DB.contents.find(x=>x.id===id);
+  const attachHtml = renderAttachSection(c);
+  return `
+  <div class="modal-overlay" data-act="closeModal">
+    <div class="modal-sheet" data-stop>
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h3>${primaryIcon(c)} ${esc(c.title)}</h3>
+        <button class="modal-close" data-act="closeModal">✕</button>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <span class="chip" style="padding:2px 10px;">${esc(c.category)}</span>
+      </div>
+      <p class="modal-desc">${esc(c.desc)}</p>
+      ${attachHtml}
+    </div>
+  </div>`;
+}
+
+function renderAttachManageRow(f,i){
+  return '<div class="attach-manage-row">'
+    + '<span class="attach-ico">' + fileIcon(f) + '</span>'
+    + '<span class="attach-fname">' + esc(fileName(f)) + '</span>'
+    + '<button type="button" class="mini-btn danger" data-act="removeAttachment" data-index="' + i + '">삭제</button>'
+    + '</div>';
+}
+
+function modalContentForm({data}){
+  const isEdit = !!data.id;
+  const draftFiles = data.files || [];
+  const catOptions = DB.categories.includes(data.category) || !data.category
+    ? DB.categories
+    : [data.category, ...DB.categories]; // keep an orphaned category selectable
+  const catOptionsHtml = catOptions.map(cat=>'<option value="' + esc(cat) + '" ' + (data.category===cat?'selected':'') + '>' + esc(cat) + '</option>').join('');
+  const attachRowsHtml = draftFiles.length
+    ? draftFiles.map((f,i)=>renderAttachManageRow(f,i)).join('')
+    : '<div class="attach-empty">아직 첨부된 자료가 없습니다</div>';
+  return `
+  <div class="modal-overlay center" data-act="closeModal">
+    <div class="modal-sheet" data-stop>
+      <div class="modal-head"><h3>${isEdit?'콘텐츠 수정':'콘텐츠 등록'}</h3><button class="modal-close" data-act="closeModal">✕</button></div>
+      <form id="dataForm" data-form="content" data-id="${data.id||''}">
+        <div class="field"><label>제목</label><input name="title" value="${esc(data.title||'')}" required></div>
+        <div class="field"><label>카테고리</label>
+          <select name="category" required>
+            ${catOptionsHtml}
+          </select>
+        </div>
+        <div class="field"><label>설명</label><textarea name="desc" required>${esc(data.desc||'')}</textarea></div>
+        <div class="field" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" name="active" id="activeCk" ${data.active!==false?'checked':''} style="width:auto;">
+          <label for="activeCk" style="margin:0;">운영중 상태로 노출</label>
+        </div>
+
+        <div class="field">
+          <label>첨부 자료 (이미지 · PPT · PDF, 파일당 최대 20MB)</label>
+          <div class="attach-manager">
+            ${attachRowsHtml}
+          </div>
+          <input type="file" id="attachFileInput" accept="image/*,.pdf,.pptx,.ppt,.doc,.docx,.xls,.xlsx" multiple style="display:none;">
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;" data-act="triggerFileUpload">📎 파일 추가</button>
+          <div id="uploadStatus" class="upload-status"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary btn-block">${isEdit?'저장':'등록'}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function modalCategoryForm({data}){
+  const isEdit = !!data._orig;
+  return `
+  <div class="modal-overlay center" data-act="closeModal">
+    <div class="modal-sheet" data-stop>
+      <div class="modal-head"><h3>${isEdit?'카테고리 수정':'카테고리 추가'}</h3><button class="modal-close" data-act="closeModal">✕</button></div>
+      <form id="dataForm" data-form="category" data-origname="${esc(data._orig||'')}">
+        <div class="field"><label>카테고리명</label><input name="name" value="${esc(data.name||'')}" required></div>
+        ${isEdit ? `<div class="hint">💡 이름을 바꾸면 이 카테고리를 쓰는 모든 콘텐츠에 자동 반영됩니다</div>` : ''}
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary btn-block">${isEdit?'저장':'추가'}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function modalEmployeeForm({data}){
+  const isEdit = !!data._orig;
+  return `
+  <div class="modal-overlay center" data-act="closeModal">
+    <div class="modal-sheet" data-stop>
+      <div class="modal-head"><h3>${isEdit?'계정 정보 수정':'계정 등록'}</h3><button class="modal-close" data-act="closeModal">✕</button></div>
+      <form id="dataForm" data-form="employee" data-origid="${data._orig||''}">
+        <div class="field"><label>아이디 (로그인 ID)</label><input name="id" value="${esc(data.id||'')}" ${isEdit?'readonly style="background:var(--bg);color:var(--ink-soft);"':''} required></div>
+        <div class="field"><label>이름</label><input name="name" value="${esc(data.name||'')}" required></div>
+        <div class="field-row">
+          <div class="field"><label>소속</label><input name="dept" value="${esc(data.dept||'')}" required></div>
+          <div class="field"><label>지역</label><input name="region" value="${esc(data.region||'')}" required></div>
+        </div>
+        ${!isEdit ? `<div class="hint">💡 비밀번호는 아이디와 동일하게 자동 설정됩니다</div>` : ''}
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary btn-block">${isEdit?'저장':'등록'}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function modalPopupForm({data}){
+  const isEdit = !!data.id;
+  return `
+  <div class="modal-overlay center" data-act="closeModal">
+    <div class="modal-sheet" data-stop>
+      <div class="modal-head"><h3>${isEdit?'팝업 수정':'팝업 등록'}</h3><button class="modal-close" data-act="closeModal">✕</button></div>
+      <form id="dataForm" data-form="popup" data-id="${data.id||''}">
+        <div class="field"><label>제목</label><input name="title" value="${esc(data.title||'')}" required></div>
+        <div class="field"><label>내용</label><textarea name="message" required>${esc(data.message||'')}</textarea></div>
+        <div class="field" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" name="active" id="popActive" ${data.active!==false?'checked':''} style="width:auto;">
+          <label for="popActive" style="margin:0;">즉시 노출</label>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary btn-block">${isEdit?'저장':'등록'}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+/* ============================= EVENT HANDLING ============================= */
+function attachHandlers(){
+  const root = document.getElementById('root');
+
+  // stop propagation inside sheets
+  root.querySelectorAll('[data-stop]').forEach(el=>el.addEventListener('click', e=>e.stopPropagation()));
+
+  root.addEventListener('submit', onSubmit);
+  root.addEventListener('click', onClick);
+  root.addEventListener('change', onChange);
+}
+
+function syncContentFormDraft(){
+  const form = document.getElementById('dataForm');
+  if(!form || form.dataset.form!=='content' || !S.modal || !S.modal.data) return;
+  const fd = new FormData(form);
+  S.modal.data.title = fd.get('title');
+  S.modal.data.category = fd.get('category');
+  S.modal.data.desc = fd.get('desc');
+  S.modal.data.active = fd.get('active')==='on';
+}
+
+async function onChange(e){
+  const input = e.target;
+  if(input.id==='attachFileInput'){
+    const files = Array.from(input.files || []);
+    if(!files.length) return;
+    syncContentFormDraft();
+    const statusEl = document.getElementById('uploadStatus');
+    for(const file of files){
+      if(file.size > MAX_UPLOAD_BYTES){
+        alert(`'${file.name}' 파일이 너무 큽니다 (${(file.size/1024/1024).toFixed(1)}MB). 파일당 최대 20MB까지 업로드할 수 있어요.`);
+        continue;
+      }
+      if(statusEl) statusEl.textContent = `${file.name} 업로드 중…`;
+      try{
+        const url = await uploadAttachment(file);
+        if(!S.modal.data.files) S.modal.data.files = [];
+        S.modal.data.files.push({name:file.name, url});
+      }catch(err){
+        console.error('upload failed', err);
+        alert(`'${file.name}' 업로드에 실패했습니다: ${(err && err.message) || err}`);
+      }
+    }
+    if(statusEl) statusEl.textContent = '';
+    render();
+  }
+}
+
+async function onSubmit(e){
+  const form = e.target;
+  if(form.id==='loginForm'){ e.preventDefault(); return handleLogin(form); }
+  if(form.id==='dataForm'){ e.preventDefault(); return handleDataForm(form); }
+}
+
+async function handleLogin(form){
+  const uid = form.uid.value.trim();
+  const pw = form.pw.value.trim();
+  if(uid.toLowerCase()==='admin' && pw.toLowerCase()==='admin'){
+    S.screen='admin'; S.adminTab='overview'; S.loginErr='';
+    render();
+    return;
+  }
+  const emp = DB.employees.find(x=>x.id.toLowerCase()===uid.toLowerCase());
+  if(emp && pw.toLowerCase()===emp.id.toLowerCase()){
+    S.currentUser = emp; S.screen='rep'; S.repTab='home'; S.loginErr=''; S.dismissedPopups=[];
+  }else{
+    S.loginErr = '아이디 또는 비밀번호가 일치하지 않습니다.';
+  }
+  render();
+}
+
+async function handleDataForm(form){
+  const type = form.dataset.form;
+  const fd = new FormData(form);
+  if(type==='content'){
+    const id = form.dataset.id;
+    const payload = {
+      title: fd.get('title').trim(), category: fd.get('category').trim(),
+      desc: fd.get('desc').trim(), active: fd.get('active')==='on',
+      files: (S.modal && S.modal.data && S.modal.data.files) || []
+    };
+    if(id){ Object.assign(DB.contents.find(c=>c.id===id), payload); }
+    else { DB.contents.push({id:'C'+Date.now(), ...payload}); }
+    await persist('contents');
+  }
+  if(type==='category'){
+    const origName = form.dataset.origname;
+    const name = fd.get('name').trim();
+    if(origName){
+      const idx = DB.categories.indexOf(origName);
+      if(idx>-1) DB.categories[idx] = name;
+      DB.contents.forEach(c=>{ if(c.category===origName) c.category = name; });
+      await persist('contents');
+    } else if(!DB.categories.includes(name)) {
+      DB.categories.push(name);
+    }
+    await persist('categories');
+  }
+  if(type==='employee'){
+    const origId = form.dataset.origid;
+    const id = fd.get('id').trim();
+    const payload = {name:fd.get('name').trim(), dept:fd.get('dept').trim(), region:fd.get('region').trim()};
+    if(origId){ Object.assign(findEmployee(origId), payload); }
+    else { DB.employees.push({id, ...payload}); }
+    await persist('employees');
+  }
+  if(type==='popup'){
+    const id = form.dataset.id;
+    const payload = {title:fd.get('title').trim(), message:fd.get('message').trim(), active:fd.get('active')==='on'};
+    if(id){ Object.assign(DB.popups.find(p=>p.id===id), payload); }
+    else { DB.popups.push({id:'P'+Date.now(), ...payload}); }
+    await persist('popups');
+  }
+  S.modal = null;
+  render();
+}
+
+async function onClick(e){
+  const t = e.target.closest('[data-act]');
+  if(!t){
+    if(e.target.closest('.modal-overlay') && !e.target.closest('[data-stop]')){ S.modal=null; render(); }
+    return;
+  }
+  const act = t.dataset.act;
+
+  if(act==='logout'){ S.screen='login'; S.currentUser=null; S.loginErr=''; render(); return; }
+  if(act==='closeModal'){ S.modal=null; render(); return; }
+
+  // rep nav
+  if(act==='repTab'){ S.repTab = t.dataset.tab; render(); return; }
+  if(act==='filterContent'){
+    S.contentFilter = t.dataset.cat;
+    if(t.dataset.tab) S.repTab = t.dataset.tab;
+    render();
+    return;
+  }
+  if(act==='dismissPopup'){ S.dismissedPopups.push(t.dataset.id); render(); return; }
+  if(act==='openContent'){ S.modal = {type:'contentDetail', id:t.dataset.id}; render(); return; }
+
+  // admin nav
+  if(act==='adminTab'){ S.adminTab = t.dataset.tab; render(); return; }
+  if(act==='refreshAdmin'){ await initReload(); return; }
+
+  // content CRUD
+  if(act==='newContent'){ S.modal={type:'contentForm', data:{active:true, category:DB.categories[0]||'', files:[]}}; render(); return; }
+  if(act==='editContent'){ const c = DB.contents.find(x=>x.id===t.dataset.id); S.modal={type:'contentForm', data:{...c, files:[...(c.files||[])]}}; render(); return; }
+  if(act==='deleteContent'){
+    if(confirm('이 콘텐츠를 삭제할까요?')){
+      DB.contents = DB.contents.filter(c=>c.id!==t.dataset.id);
+      await persist('contents');
+      render();
+    }
+    return;
+  }
+
+  // category CRUD
+  if(act==='newCategory'){ S.modal={type:'categoryForm', data:{}}; render(); return; }
+  if(act==='editCategory'){ S.modal={type:'categoryForm', data:{name:t.dataset.name, _orig:t.dataset.name}}; render(); return; }
+  if(act==='deleteCategory'){
+    const name = t.dataset.name;
+    const inUse = DB.contents.filter(c=>c.category===name).length;
+    if(inUse>0){ alert(`'${name}' 카테고리를 사용중인 콘텐츠가 ${inUse}개 있어 삭제할 수 없습니다. 먼저 해당 콘텐츠의 카테고리를 변경해주세요.`); return; }
+    if(confirm(`'${name}' 카테고리를 삭제할까요?`)){ DB.categories = DB.categories.filter(c=>c!==name); await persist('categories'); render(); }
+    return;
+  }
+
+  // attachment management (inside content form modal)
+  if(act==='triggerFileUpload'){ const input = document.getElementById('attachFileInput'); if(input) input.click(); return; }
+  if(act==='removeAttachment'){
+    syncContentFormDraft();
+    const idx = parseInt(t.dataset.index,10);
+    S.modal.data.files.splice(idx,1);
+    render();
+    return;
+  }
+
+  // employee CRUD
+  if(act==='newEmployee'){ S.modal={type:'employeeForm', data:{}}; render(); return; }
+  if(act==='editEmployee'){ const emp = findEmployee(t.dataset.id); S.modal={type:'employeeForm', data:{...emp, _orig:emp.id}}; render(); return; }
+  if(act==='deleteEmployee'){ if(confirm('이 계정을 삭제할까요?')){ DB.employees = DB.employees.filter(e=>e.id!==t.dataset.id); await persist('employees'); render(); } return; }
+
+  // popups
+  if(act==='newPopup'){ S.modal={type:'popupForm', data:{active:true}}; render(); return; }
+  if(act==='editPopup'){ const p = DB.popups.find(x=>x.id===t.dataset.id); S.modal={type:'popupForm', data:{...p}}; render(); return; }
+  if(act==='deletePopup'){ if(confirm('이 팝업을 삭제할까요?')){ DB.popups = DB.popups.filter(p=>p.id!==t.dataset.id); await persist('popups'); render(); } return; }
+  if(act==='togglePopup'){ const p = DB.popups.find(x=>x.id===t.dataset.id); p.active=!p.active; await persist('popups'); render(); return; }
+}
+
+async function initReload(){
+  S.ready=false; render();
+  await initDB();
+}
+
+/* ============================= BOOT ============================= */
+initDB().catch(err=>{
+  console.error('init failed, falling back to seed data', err);
+  DB.employees = SEED_EMPLOYEES; DB.contents = SEED_CONTENTS; DB.popups = SEED_POPUPS;
+  DB.categories = SEED_CATEGORIES;
+  S.ready = true; render();
+});
+</script>
+</body>
+</html>
